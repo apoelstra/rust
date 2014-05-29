@@ -19,6 +19,7 @@ use ext::quote::rt::*;
 use fold::Folder;
 use owned_slice::OwnedSlice;
 use parse::token::special_idents;
+use parse::token::InternedString;
 use parse::token;
 
 pub struct Field {
