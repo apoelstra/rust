@@ -36,8 +36,13 @@ pub mod rt {
     use parse;
     use print::pprust;
 
+    // NOTE remove this after snapshot
+    // (stage0 quasiquoter needs this)
+    #[cfg(stage0)]
     pub use ast::*;
+    #[cfg(stage0)]
     pub use parse::token::*;
+
     pub use parse::new_parser_from_tts;
     pub use codemap::{BytePos, Span, dummy_spanned};
 
@@ -72,7 +77,7 @@ pub mod rt {
 
     impl ToSource for ast::Ident {
         fn to_source(&self) -> String {
-            get_ident(*self).get().to_string()
+            token::get_ident(*self).get().to_string()
         }
     }
 
@@ -685,11 +690,14 @@ fn expand_wrapper(cx: &ExtCtxt,
                   sp: Span,
                   cx_expr: @ast::Expr,
                   expr: @ast::Expr) -> @ast::Expr {
-    let uses = vec![ cx.view_use_glob(sp, ast::Inherited,
-                                   ids_ext(vec!["syntax".to_string(),
-                                                "ext".to_string(),
-                                                "quote".to_string(),
-                                                "rt".to_string()])) ];
+    let uses = [
+        &["syntax", "ext", "quote", "rt"],
+        &["syntax", "ast"],
+        &["syntax", "parse", "token"],
+    ].iter().map(|path| {
+        let path = path.iter().map(|s| s.to_string()).collect();
+        cx.view_use_glob(sp, ast::Inherited, ids_ext(path))
+    }).collect();
 
     let stmt_let_ext_cx = cx.stmt_let(sp, false, id_ext("ext_cx"), cx_expr);
 
